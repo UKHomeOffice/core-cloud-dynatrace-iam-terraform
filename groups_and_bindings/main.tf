@@ -14,10 +14,10 @@ locals {
 resource "dynatrace_iam_group" "cc-iam-group" {
   name          = local.group_name
   dynamic "permissions" {
-    for_each = var.groups_and_permissions[local.group_name].permission != null ? [1] : []
+    for_each = length(var.groups_and_permissions[local.group_name].permissions) > 0 ? [1] : []
     content {
       dynamic "permission" {
-        for_each = [var.groups_and_permissions[local.group_name].permission]
+        for_each = var.groups_and_permissions[local.group_name].permissions
         content {
           name  = permission.value.name
           type  = permission.value.type

@@ -10,7 +10,7 @@ resource "dynatrace_iam_policy" "env_policy" {
   for_each = var.iam_policies
 
   name            = each.key
-  account         = var.accountUUID
+  account         = var.accountUUID # Account, until discovered to be otherwise, account id is going to be a constant
   statement_query = "ALLOW ${join(", ",each.value.policy_permissions)} ${coalesce(each.value.policy_condition, "__UNDEFINED__") != "__UNDEFINED__" ? format("%s %s","WHERE",each.value.policy_condition) : "" };"
 }
 

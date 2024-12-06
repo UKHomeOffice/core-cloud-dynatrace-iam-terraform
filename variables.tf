@@ -7,7 +7,6 @@
 variable "iam_policies" {
   type = map(object({
            policy_permissions = list(string) 
-           policy_scope_account = optional(string,null)
            policy_condition = optional(string)
            policy_parameters = optional(map(string),{})
            policy_metadata   = optional(map(string),{})
