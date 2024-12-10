@@ -1,5 +1,5 @@
-# !!!! There is one more variable definition in the file 
-# 'iam_group_variable_type.tf' shared between the root and 
+# !!!! There are more variable definitions in the file 
+# 'shared_vars.tf' shared between the root and 
 # the sub modules
 
 
@@ -13,9 +13,4 @@ variable "iam_policies" {
          }))
   description = "Dictionary of policies."
   default = {}
-}
-
-variable "accountUUID" {
-  type = string
-  description = "Root account UUID"
 }

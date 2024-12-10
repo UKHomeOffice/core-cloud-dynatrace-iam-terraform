@@ -22,4 +22,5 @@ module "groups_and_bindings" {
   # Concatenate the newly created policies with the existing polices
   # so we can refer to the policies both during plan and apply stages
   group_policies = concat(data.dynatrace_iam_policies.allPolicies.policies, [for k, v in dynatrace_iam_policy.env_policy : v])
+  accountUUID         = var.accountUUID
 }

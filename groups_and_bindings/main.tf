@@ -30,7 +30,7 @@ resource "dynatrace_iam_group" "cc-iam-group" {
 
 resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
   group = dynatrace_iam_group.cc-iam-group.id
-  account = "6832d11c-2f40-4525-ac9e-f44cebc1cd76"
+  account = var.accountUUID
   dynamic "policy" {
     for_each = keys(var.groups_and_permissions[local.group_name].attached_policies)
     content {
