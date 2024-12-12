@@ -13,19 +13,7 @@ locals {
 
 resource "dynatrace_iam_group" "cc-iam-group" {
   name          = local.group_name
-  dynamic "permissions" {
-    for_each = length(var.groups_and_permissions[local.group_name].permissions) > 0 ? [1] : []
-    content {
-      dynamic "permission" {
-        for_each = var.groups_and_permissions[local.group_name].permissions
-        content {
-          name  = permission.value.name
-          type  = permission.value.type
-          scope = permission.value.scope
-        }
-      }
-    }
-  }
+  federated_attribute_values = toset(var.groups_and_permissions[local.group_name].federated_attribute_values)
 }
 
 resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {

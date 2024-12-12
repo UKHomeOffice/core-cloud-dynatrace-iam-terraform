@@ -2,16 +2,12 @@
 # for DRY purpose
 variable "groups_and_permissions" {
   type = map(object({
-    # Refer to https://registry.terraform.io/providers/dynatrace-oss/dynatrace/latest/docs/resources/iam_group#permissions-1
-    # and other relavant Dynatrace documentation for details
-    # on providing inputs to the following variable
-# !!! TODO - Dont use it until we require it !!!!!!!!!!
-    permissions = optional(list(object({
-                            name = string
-                            scope = string
-                            type = string
-                          })),[])
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                        # Policies to be attached to the group
+    # Refer to :
+    #   https://registry.terraform.io/providers/dynatrace-oss/dynatrace/latest/docs/resources/iam_group#federated_attribute_values-1
+    # and
+    #   https://docs.dynatrace.com/docs/manage/identity-access-management/user-and-group-management/access-group-management
+    # for more details
+    federated_attribute_values = optional(list(string))
     # Refer to https://registry.terraform.io/providers/dynatrace-oss/dynatrace/latest/docs/resources/iam_policy_bindings_v2 and
     # https://registry.terraform.io/providers/dynatrace-oss/dynatrace/latest/docs/resources/iam_policy
     # for more details.
