@@ -15,18 +15,11 @@ variable "groups_and_permissions" {
     # resource and therefore not supported here - only 'account' is supported
     # For documentation on parameters refer to:
     #   https://docs.dynatrace.com/docs/manage/identity-access-management/permission-management/manage-user-permissions-policies/advanced/iam-policy-templating
-    environment_bound_policies = optional(map(object({
-                          environment_id = string
+    attached_policies = optional(map(object({
                           policy_parameters = optional(map(string),null)
                           policy_metadata = optional(map(string),null)
 
     })),{})
-    account_bound_policies = optional(map(object({
-                          policy_parameters = optional(map(string),null)
-                          policy_metadata = optional(map(string),null)
-
-    })),{})
-
   }))
   description = "Map of IAM groups"
   default = {}
