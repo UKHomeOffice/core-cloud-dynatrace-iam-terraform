@@ -1,6 +1,6 @@
 # What does the repository do?
 
-This repository originated from the issue [CCL-1274](https://collaboration.homeoffice.gov.uk/jira/browse/CCL-1274) and creates the following resources:
+This repository creates the following resources:
 
 1. Dynatrace IAM groups
 2. Dynatrace IAM policies
