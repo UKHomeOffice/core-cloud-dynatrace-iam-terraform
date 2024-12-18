@@ -1,23 +1,22 @@
 module "example" {
   source = "../"
   groups_and_permissions = {
-    autogroupasdtwo = {
+    group_one = {
       attached_policies = {
-        anotherautomated = {    # Custom policy
-          policy_parameters = { # Options parameters for the policy binding
-            param1 = "value1"
-          }
-          policy_metadata = { # Options metadata for the policy binding
-            meta1 = "metaval1"
-          }
+        policy_static = {
+          environment = "tvy38111"
         }
       }
     }
-    autogroupasd = {
+    group_two = {
       attached_policies = {
-        anotherautomated = {    # Custom policy
-          policy_parameters = { # Options parameters for the policy binding
-            param1 = "value1"
+        policy_with_param = {
+          environment = "tvy38111"
+          policy_parameters = {
+            zone = "zone1"
+          }
+          policy_metadata = {
+            meta1 = "metaval1"
           }
         }
       }
@@ -25,22 +24,15 @@ module "example" {
   }
 
   iam_policies = {
-    testpolicy = { # Created but unused     
-      policy_permissions = [
-        "settings:objects:read",
-        "settings:schemas:read"
-      ]
-      policy_condition = "settings:schemaId = \"string\"" # Can be a complex condition - refer to Dynatrace documentation    
-    }
-    anotherautomated = {
-      policy_permissions = [
-        "settings:objects:read",
-        "settings:schemas:read"
-      ]
-    }
+    policy_with_param = <<EOT
+ALLOW environment:roles:viewer, environment:roles:manage-settings
+WHERE environment:management-zone IN ("zone2", "$${bindParam:my-policy-param}");
+
+EOT
+    policy_static     = "ALLOW settings:objects:read;"
   }
 
-  accountUUID = "1111-1111-1111-1111-1111"
+  accountUUID = "a8c6fb99-cc30-46b5-9306-1111111"
 }
 
 
