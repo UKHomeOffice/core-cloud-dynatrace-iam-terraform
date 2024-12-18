@@ -10,7 +10,7 @@ resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
   environment = each.value.environment
 
   policy {
-    id         = element([for item in var.all_policies : item if item["name"] == each.key], 0).id
+    id         = element([for item in var.iam_policies : item if item["name"] == each.key], 0).id
     parameters = each.value.policy_parameters
     metadata   = each.value.policy_metadata
   }

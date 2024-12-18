@@ -1,4 +1,4 @@
-variable "all_policies" {
+variable "iam_policies" {
   type        = any
   description = "Combination of list of predefined and custom policies."
 }

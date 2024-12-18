@@ -13,5 +13,5 @@ module "groups_and_bindings" {
   group_name                 = each.key
   attached_policies          = each.value.attached_policies
   federated_attribute_values = each.value.federated_attribute_values
-  all_policies               = [for k, v in dynatrace_iam_policy.env_policy : v]
+  iam_policies               = [for k, v in dynatrace_iam_policy.env_policy : v]
 }
