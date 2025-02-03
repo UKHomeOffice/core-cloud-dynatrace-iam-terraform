@@ -22,13 +22,6 @@ module "example" {
       }
     }
 
-    group_viewer = {
-      attached_policies = {
-        CC-Viewer-User = {
-          environment = "tvy38626"
-        }
-      }
-    }
   }
 
   iam_policies = {
@@ -40,19 +33,15 @@ EOT
     policy_static     = "ALLOW settings:objects:read;"
     CC-Viewer-User    = <<EOT
 ALLOW storage:buckets:read,
-storage:metrics:read, 
-storage:spans:read, 
-storage:bizevents:read, 
-storage:events:read, 
-storage:system:read, 
-storage:application.snapshots:read, 
-storage:entities:read, 
+storage:metrics:read,
+storage:spans:read,
+storage:bizevents:read,
+storage:events:read,
+storage:system:read,
+storage:application.snapshots:read,
+storage:entities:read,
 storage:user.events:read,
-storage:user.sessions:read,
-storage:fieldsets:read,
-storage:logs:read,
-storage:bucket-definitions:read,
-storage:filter-segments:read;
+storage:user.sessions:read;
 
 EOT
   }
