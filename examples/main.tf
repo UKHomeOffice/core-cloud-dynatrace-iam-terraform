@@ -26,22 +26,20 @@ module "example" {
   }
 
   iam_policies = {
-    policies = {
-      policy_with_param = {
-        policy_description = "My IAM policy_with_param description"
-        policy_statements  = <<EOT
-          ALLOW environment:roles:viewer, environment:roles:manage-settings
-          WHERE environment:management-zone IN ("zone2", "$${bindParam:my-policy-param}");
-
-          EOT
-      }
-      policy_static = {
-        policy_description = "My IAM policy_static description"
-        policy_statements  = <<EOT
-          "ALLOW settings:objects:read;"
+    policy_with_param = {
+      policy_description = "My IAM policy_with_param description"
+      policy_statement   = <<EOT
+        ALLOW environment:roles:viewer, environment:roles:manage-settings
+        WHERE environment:management-zone IN ("zone2", "$${bindParam:my-policy-param}");
 
         EOT
-      }
+    }
+    policy_static = {
+      policy_description = "My IAM policy_static description"
+      policy_statement   = <<EOT
+        "ALLOW settings:objects:read;"
+
+      EOT
     }
   }
   accountUUID = "a8c6fb99-cc30-46b5-9306-1111111"
