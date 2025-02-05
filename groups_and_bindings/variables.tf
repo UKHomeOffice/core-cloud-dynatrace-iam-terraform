@@ -8,6 +8,11 @@ variable "group_name" {
   type        = string
 }
 
+variable "group_description" {
+  description = "A sensible description for this group"
+  type        = string
+}
+
 variable "attached_policies" {
   description = "A map with the key being the policy name and the value object containing the policy binding configuration"
   type = map(object({

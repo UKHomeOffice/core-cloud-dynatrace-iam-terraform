@@ -1,5 +1,6 @@
 resource "dynatrace_iam_group" "cc-iam-group" {
   name                       = var.group_name
+  description                = var.group_description
   federated_attribute_values = var.federated_attribute_values
 }
 

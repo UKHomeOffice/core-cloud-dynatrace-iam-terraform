@@ -18,6 +18,7 @@ variable "groups_and_permissions" {
       policy_metadata   = optional(map(string), null)
       environment       = string
     })), {})
+    group_description = string
   }))
   description = "Map containing group name, federated values and policy attachment configuration"
   default     = {}
@@ -31,6 +32,11 @@ variable "accountUUID" {
 
 # Refer to https://docs.dynatrace.com/docs/manage/identity-access-management/permission-management/manage-user-permissions-policies/advanced/iam-policystatements
 variable "iam_policies" {
-  type        = map(string)
+  type = object({
+    policies = map(object({
+      policy_statements  = string
+      policy_description = string
+    }))
+  })
   description = "Map of policy names and their policy query statement."
 }
