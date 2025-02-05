@@ -37,7 +37,7 @@ module "example" {
     policy_static = {
       policy_description = "My IAM policy_static description"
       policy_statement   = <<EOT
-        "ALLOW settings:objects:read;"
+        ALLOW settings:objects:read;
 
       EOT
     }
