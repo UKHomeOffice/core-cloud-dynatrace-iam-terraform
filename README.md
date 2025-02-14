@@ -9,7 +9,7 @@ This repository creates the following resources:
 # What is not implemented?
 
 1. As required in the ticket, boundaries will not be created by the repository as the functionality is not available through code.
-2. Policies are not created with environment scope as it is a deprecated functionality (as per the [terraform documentation](https://registry.terraform.io/providers/dynatrace-oss/dynatrace/latest/docs/resources/iam_policy)). However, the functionality could be achieved through policy statement condition.
+2. Policies are not created with environment scope as it is a deprecated functionality (as per the [terraform documentation](https://registry.terraform.io/providers/dynatrace-oss/dynatrace/latest/docs/resources/iam_policy)). However, the functionality could be achieved through policy bindings.
 
 # Inputs
 
@@ -30,12 +30,6 @@ No outputs
 | Name | Version |
 |------|---------|
 | <a name="provider_dynatrace"></a> [dynatrace](#provider\_dynatrace) | ~> 1.0 |
-
-## Modules
-
-| Name | Source | Version |
-|------|--------|---------|
-| <a name="module_groups_and_bindings"></a> [groups\_and\_bindings](#module\_groups\_and\_bindings) | ./groups_and_bindings | n/a |
 
 ## Resources
 
