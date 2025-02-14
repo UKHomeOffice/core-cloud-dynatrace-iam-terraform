@@ -3,22 +3,30 @@ module "example" {
   groups_and_permissions = {
     group_one = {
       group_description = "Group one description"
+      fedarated_attribute_values = [
+        "SomeEntraGroup"
+      ]
       attached_policies = {
         policy_static = {
-          environment = "tvy38111"
+          tvy38111 = {}
+          abc12345 = {}
+          xyz67890 = {}
         }
+        # Can also attach existing policy
+        "Admin User" = {}
       }
     }
     group_two = {
       group_description = "Group two description"
       attached_policies = {
         policy_with_param = {
-          environment = "tvy38111"
-          policy_parameters = {
-            zone = "zone1"
-          }
-          policy_metadata = {
-            meta1 = "metaval1"
+          tvy38111 = {
+            policy_parameters = {
+              zone = "zone1"
+              }
+            policy_metadata = {
+              meta1 = "metaval1"
+            }
           }
         }
       }
