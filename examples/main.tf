@@ -50,9 +50,15 @@ module "example" {
       EOT
     }
   }
+
+  iam_boundary_policies = {
+    group_one3 = {
+      policy_query = "storage:k8s.namespace.name = \"DEV-TEST\";" 
+    }
+  }
+  
   accountUUID = "a8c6fb99-cc30-46b5-9306-1111111"
 }
-
 
 terraform {
   required_providers {

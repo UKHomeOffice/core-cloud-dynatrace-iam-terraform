@@ -16,6 +16,7 @@ variable "groups_and_permissions" {
     attached_policies = optional(map(map(object({
       policy_parameters = optional(map(string), null)
       policy_metadata   = optional(map(string), null)
+      policy_boundaries = optional(map(string), null)
     }))), {})
     group_description = string
   }))
@@ -32,8 +33,16 @@ variable "accountUUID" {
 # Refer to https://docs.dynatrace.com/docs/manage/identity-access-management/permission-management/manage-user-permissions-policies/advanced/iam-policystatements
 variable "iam_policies" {
   type = map(object({
-      policy_statement  = string
-      policy_description = string
+    policy_statement   = string
+    policy_description = string
   }))
   description = "Map of policy names and their policy query statement."
+}
+
+variable "iam_boundary_policies" {
+  type = map(object({
+    policy_query = string
+  }))
+  description = "Map of boundary policies to user group"
+  default = {}
 }
