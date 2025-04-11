@@ -8,7 +8,9 @@ module "example" {
       ]
       attached_policies = {
         policy_static = {
-          tvy38111 = {}
+          tvy38111 = {
+            policy_boundary = "environment:management-zone startsWith \"[Foo]\";"
+          }
           abc12345 = {}
           xyz67890 = {}
         }
