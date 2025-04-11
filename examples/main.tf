@@ -23,7 +23,7 @@ module "example" {
           tvy38111 = {
             policy_parameters = {
               zone = "zone1"
-              }
+            }
             policy_metadata = {
               meta1 = "metaval1"
             }
@@ -51,13 +51,11 @@ module "example" {
     }
   }
 
-  iam_boundary_policies = {
-    group_one3 = {
-      policy_query = "storage:k8s.namespace.name = \"DEV-TEST\";" 
-    }
-  }
-  
   accountUUID = "a8c6fb99-cc30-46b5-9306-1111111"
+}
+
+output "permission_helper" {
+  value = module.example.permission_helper
 }
 
 terraform {
