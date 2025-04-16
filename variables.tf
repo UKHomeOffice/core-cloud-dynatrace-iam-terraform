@@ -16,7 +16,7 @@ variable "groups_and_permissions" {
     attached_policies = optional(map(map(object({
       policy_parameters = optional(map(string), null)
       policy_metadata   = optional(map(string), null)
-      policy_boundaries = optional(map(string), null)
+      policy_boundary   = optional(string, null)
     }))), {})
     group_description = string
   }))
@@ -39,10 +39,3 @@ variable "iam_policies" {
   description = "Map of policy names and their policy query statement."
 }
 
-variable "iam_boundary_policies" {
-  type = map(object({
-    policy_query = string
-  }))
-  description = "Map of boundary policies to user group"
-  default = {}
-}
