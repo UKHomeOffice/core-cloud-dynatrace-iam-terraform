@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: core-cloud-dynatrace-iam-terraform
+  description: A repo used to create Dynatrace IAM resources.
+  annotations:
+    github.com/project-slug: UKHomeOffice/core-cloud-dynatrace-iam-terraform
+spec:
+  type: service
+  owner: core-cloud-devops
+  lifecycle: experimental
+  system: core-cloud
