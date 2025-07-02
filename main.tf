@@ -62,7 +62,8 @@ resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
 
   policy {
     # id         = element([for item in local.iam_policies : item if item["name"] == each.value.policy_name], 0).id
-    id        = lookup({for item in local.iam_policies : item["name"] => item}, each.value.policy_name, null)?.id
+    id      = try([for item in local.iam_policies : item if item["name"] == each.value.policy_name][0].id, null)
+
 
     # parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
     parameters = try(each.value.env_params.policy_parameters, null)
