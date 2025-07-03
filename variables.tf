@@ -16,7 +16,7 @@ variable "groups_and_permissions" {
     attached_policies = optional(map(map(object({
       policy_parameters = optional(map(string), {} )
       policy_metadata   = optional(map(string), {})
-      policy_boundary   = optional(string, {})
+      policy_boundary   = optional(string, null)
     }))), {})
     group_description = string
   }))
