@@ -43,46 +43,59 @@ resource "dynatrace_iam_group" "cc-iam-group" {
   federated_attribute_values = each.value.federated_attribute_values
 }
 
-resource "dynatrace_iam_policy_boundary" "boundaries" {
-  for_each = {
-    for k, v in local.permission_helper : k => v.env_params.policy_boundary if v.env_params.policy_boundary != null
-  }
+# resource "dynatrace_iam_policy_boundary" "boundaries" {
+#   for_each = {
+#     for k, v in local.permission_helper : k => v.env_params.policy_boundary if v.env_params.policy_boundary != null
+#   }
 
-  name  = each.key
-  query = each.value
+#   name  = each.key
+#   query = each.value
 
-}
+# }
 
-resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
-  for_each = local.permission_helper
+# resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
+#   for_each = local.permission_helper
 
-  # group = element([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name], 0).id
-  group = try(element([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name], 0).id, null)
+#   # group = element([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name], 0).id
+#   group = try(element([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name], 0).id, null)
   
 
 
+#   environment = each.value.env_id
+
+#   # policy {
+#   #   # id         = element([for item in local.iam_policies : item if item["name"] == each.value.policy_name], 0).id
+#   #   id      = try([for item in local.iam_policies : item if item["name"] == each.value.policy_name][0].id, null)
+#   #   # parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
+#   #   # parameters = try(each.value.env_params.policy_parameters, null)
+#   #   parameters = try(each.value.env_params != null ? each.value.env_params.policy_parameters : null, null)
+#   #   # metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : null
+#   #   # metadata   = try(each.value.env_params.policy_metadata, null)
+#   #   metadata   = try(each.value.env_params != null ? each.value.env_params.policy_metadata : null, null)
+#   #   # boundaries = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key]
+#   #   boundaries = try([for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key], [])
+
+#   # }
+#   policy {
+#     id         = element([for item in local.iam_policies : item if item["name"] == each.value.policy_name], 0).id
+#     # parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : {}
+#     # metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : {}
+#     boundaries = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key]
+#   }
+
+# }
+resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
+  for_each = local.permission_helper
+
+  group       = try([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name][0].id, null)
   environment = each.value.env_id
 
-  # policy {
-  #   # id         = element([for item in local.iam_policies : item if item["name"] == each.value.policy_name], 0).id
-  #   id      = try([for item in local.iam_policies : item if item["name"] == each.value.policy_name][0].id, null)
-  #   # parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
-  #   # parameters = try(each.value.env_params.policy_parameters, null)
-  #   parameters = try(each.value.env_params != null ? each.value.env_params.policy_parameters : null, null)
-  #   # metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : null
-  #   # metadata   = try(each.value.env_params.policy_metadata, null)
-  #   metadata   = try(each.value.env_params != null ? each.value.env_params.policy_metadata : null, null)
-  #   # boundaries = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key]
-  #   boundaries = try([for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key], [])
-
-  # }
   policy {
-    id         = element([for item in local.iam_policies : item if item["name"] == each.value.policy_name], 0).id
-    parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : {}
-    metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : {}
-    boundaries = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key]
+    id         = try([for item in local.iam_policies : item if item["name"] == each.value.policy_name][0].id, null)
+    parameters = try(each.value.env_params.policy_parameters, {})
+    metadata   = try(each.value.env_params.policy_metadata, {})
+    boundaries = try([for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key], [])
   }
-
 }
 
 output "permission_helper" {
