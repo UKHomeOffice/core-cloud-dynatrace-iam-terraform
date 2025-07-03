@@ -43,15 +43,15 @@ resource "dynatrace_iam_group" "cc-iam-group" {
   federated_attribute_values = each.value.federated_attribute_values
 }
 
-# resource "dynatrace_iam_policy_boundary" "boundaries" {
-#   for_each = {
-#     for k, v in local.permission_helper : k => v.env_params.policy_boundary if v.env_params.policy_boundary != null
-#   }
+resource "dynatrace_iam_policy_boundary" "boundaries" {
+  for_each = {
+    for k, v in local.permission_helper : k => v.env_params.policy_boundary if v.env_params.policy_boundary != null
+  }
 
-#   name  = each.key
-#   query = each.value
+  name  = each.key
+  query = each.value
 
-# }
+}
 
 # resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
 #   for_each = local.permission_helper
