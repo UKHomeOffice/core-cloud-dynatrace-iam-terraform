@@ -14,7 +14,7 @@ variable "groups_and_permissions" {
     # For documentation on parameters refer to:
     #   https://docs.dynatrace.com/docs/manage/identity-access-management/permission-management/manage-user-permissions-policies/advanced/iam-policy-templating
     attached_policies = optional(map(map(object({
-      policy_parameters = optional(map(string))
+      policy_parameters = optional(map(string), {} )
       policy_metadata   = optional(map(string))
       policy_boundary   = optional(string, null)
     }))), {})
