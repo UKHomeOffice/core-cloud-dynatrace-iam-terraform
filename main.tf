@@ -102,8 +102,40 @@ output "permission_helper" {
   value = local.permission_helper
 }
 
+output "iam_policies" {
+  value = local.iam_policies
+}
+
+output "policy_boundaries" {
+  value = {
+    for name, boundary in dynatrace_iam_policy_boundary.boundaries : 
+    name => {
+      name  = boundary.name
+      query = boundary.query
+    }
+  }
+}
+
 output "env_params_by_key" {
   value = {
     for k, v in local.permission_helper : k => v.env_params
   }
 }
+
+output "cc_policy_bindings" {
+  value = {
+    for k, v in dynatrace_iam_policy_bindings_v2.cc-policy-bindings :
+    k => {
+      group       = v.group
+      environment = v.environment
+      policy = {
+        id         = v.policy[0].id
+        parameters = v.policy[0].parameters
+        metadata   = v.policy[0].metadata
+        boundaries = v.policy[0].boundaries
+      }
+    }
+  }
+}
+
+
