@@ -129,10 +129,10 @@ output "cc_policy_bindings" {
       group       = v.group
       environment = v.environment
       policy = {
-        id         = v.policy[0].id
-        parameters = v.policy[0].parameters
-        metadata   = v.policy[0].metadata
-        boundaries = v.policy[0].boundaries
+        id         = try(v.policy[0].id, "")
+        parameters = try(v.policy[0].parameters, {})
+        metadata   = try(v.policy[0].metadata, {})
+        boundaries = try(v.policy[0].boundaries, [])
       }
     }
   }
