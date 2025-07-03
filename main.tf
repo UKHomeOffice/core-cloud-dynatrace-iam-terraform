@@ -77,23 +77,11 @@ resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
 
   # }
   policy {
-  id         = try([for item in local.iam_policies : item if item["name"] == each.value.policy_name][0].id, null)
-
-  parameters = try(
-    each.value.env_params != null && contains(keys(each.value.env_params), "policy_parameters") ? each.value.env_params.policy_parameters : {},
-    {}
-  )
-
-  metadata = try(
-    each.value.env_params != null && contains(keys(each.value.env_params), "policy_metadata") ? each.value.env_params.policy_metadata : {},
-    {}
-  )
-
-  boundaries = try(
-    [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key],
-    []
-  )
-}
+    id         = element([for item in local.iam_policies : item if item["name"] == each.value.policy_name], 0).id
+    parameters = each.value.env_params != {} ? each.value.env_params.policy_parameters : {}
+    metadata   = each.value.env_params != {} ? each.value.env_params.policy_metadata : {}
+    boundaries = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key]
+  }
 
 }
 
