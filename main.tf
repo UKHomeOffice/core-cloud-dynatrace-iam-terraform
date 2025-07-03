@@ -102,6 +102,20 @@ output "permission_helper" {
   value = local.permission_helper
 }
 
+output "iam_policies" {
+  value = local.iam_policies
+}
+
+output "policy_boundaries" {
+  value = {
+    for name, boundary in dynatrace_iam_policy_boundary.boundaries : 
+    name => {
+      name  = boundary.name
+      query = boundary.query
+    }
+  }
+}
+
 output "env_params_by_key" {
   value = {
     for k, v in local.permission_helper : k => v.env_params
