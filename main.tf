@@ -87,14 +87,14 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
   for_each = local.permission_helper
 
-  group       = try([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name][0].id, "")
+  group       = try([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name][0].id, "f2b634e3-5770-4e61-9862-8f62e1a32838#-#account#-#dbc44ee4-8095-4c36-b335-2606b60e1601")
   environment = each.value.env_id
 
   policy {
     id         = try([for item in local.iam_policies : item if item["name"] == each.value.policy_name][0].id, "")
-    parameters = try(each.value.env_params.policy_parameters, {})
-    metadata   = try(each.value.env_params.policy_metadata, {})
-    boundaries = try([for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key], [])
+    # parameters = try(each.value.env_params.policy_parameters, {})
+    # metadata   = try(each.value.env_params.policy_metadata, {})
+    # boundaries = try([for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key], [])
   }
 }
 
