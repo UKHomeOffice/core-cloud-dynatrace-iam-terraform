@@ -90,52 +90,52 @@ resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
   group       = try([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name][0].id, "")
   environment = each.value.env_id
 
-  # policy {
-  #   id         = try([for item in local.iam_policies : item if item["name"] == each.value.policy_name][0].id, "f2b634e3-5770-4e61-9862-8f62e1a32838#-#account#-#dbc44ee4-8095-4c36-b335-2606b60e1601")
-  #   # parameters = try(each.value.env_params.policy_parameters, {})
-  #   # metadata   = try(each.value.env_params.policy_metadata, {})
-  #   # boundaries = try([for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key], [])
-  # }
+  policy {
+    id         = try([for item in local.iam_policies : item if item["name"] == each.value.policy_name][0].id, "f2b634e3-5770-4e61-9862-8f62e1a32838#-#account#-#dbc44ee4-8095-4c36-b335-2606b60e1601")
+    parameters = try(each.value.env_params.policy_parameters, {})
+    metadata   = try(each.value.env_params.policy_metadata, {})
+    boundaries = try([for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key], [])
+  }
 }
 
 output "permission_helper" {
   value = local.permission_helper
 }
 
-output "iam_policies" {
-  value = local.iam_policies
-}
+# output "iam_policies" {
+#   value = local.iam_policies
+# }
 
-output "policy_boundaries" {
-  value = {
-    for name, boundary in dynatrace_iam_policy_boundary.boundaries : 
-    name => {
-      name  = boundary.name
-      query = boundary.query
-    }
-  }
-}
+# output "policy_boundaries" {
+#   value = {
+#     for name, boundary in dynatrace_iam_policy_boundary.boundaries : 
+#     name => {
+#       name  = boundary.name
+#       query = boundary.query
+#     }
+#   }
+# }
 
-output "env_params_by_key" {
-  value = {
-    for k, v in local.permission_helper : k => v.env_params
-  }
-}
+# output "env_params_by_key" {
+#   value = {
+#     for k, v in local.permission_helper : k => v.env_params
+#   }
+# }
 
-output "cc_policy_bindings" {
-  value = {
-    for k, v in dynatrace_iam_policy_bindings_v2.cc-policy-bindings :
-    k => {
-      group       = v.group
-      environment = v.environment
-      policy = {
-        id         = try(v.policy[0].id, "")
-        parameters = try(v.policy[0].parameters, {})
-        metadata   = try(v.policy[0].metadata, {})
-        boundaries = try(v.policy[0].boundaries, [])
-      }
-    }
-  }
-}
+# output "cc_policy_bindings" {
+#   value = {
+#     for k, v in dynatrace_iam_policy_bindings_v2.cc-policy-bindings :
+#     k => {
+#       group       = v.group
+#       environment = v.environment
+#       policy = {
+#         id         = try(v.policy[0].id, "")
+#         parameters = try(v.policy[0].parameters, {})
+#         metadata   = try(v.policy[0].metadata, {})
+#         boundaries = try(v.policy[0].boundaries, [])
+#       }
+#     }
+#   }
+# }
 
 
