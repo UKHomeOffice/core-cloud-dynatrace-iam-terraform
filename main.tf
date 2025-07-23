@@ -56,7 +56,7 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
   for_each = local.permission_helper
 
-  group = element([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name], 0).id
+  group = dynatrace_iam_group.cc-iam-group[each.value.group_name].id
 
   environment = each.value.env_id
 
