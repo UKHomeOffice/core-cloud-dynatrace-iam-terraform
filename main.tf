@@ -56,15 +56,33 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
   for_each = local.permission_helper
 
-  group = dynatrace_iam_group.cc-iam-group[each.value.group_name].id
-
+  group       = dynatrace_iam_group.cc-iam-group[each.value.group_name].id
   environment = each.value.env_id
 
   policy {
-    id         = local.iam_policies[each.value.policy_name].id
-    parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
-    metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : null
-    boundaries = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key]
+    id = element([for item in local.iam_policies : item if item["name"] == each.value.policy_name], 0).id
+
+    dynamic "parameters" {
+      for_each = each.value.env_params != null && each.value.env_params.policy_parameters != null ? [each.value.env_params.policy_parameters] : []
+      content {
+        # You may need to adjust this to match the expected structure
+        value = parameters.value
+      }
+    }
+
+    dynamic "metadata" {
+      for_each = each.value.env_params != null && each.value.env_params.policy_metadata != null ? [each.value.env_params.policy_metadata] : []
+      content {
+        value = metadata.value
+      }
+    }
+
+    dynamic "boundaries" {
+      for_each = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key]
+      content {
+        value = boundaries.value
+      }
+    }
   }
 }
 
