@@ -60,7 +60,7 @@ resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
   environment = each.value.env_id
 
   policy {
-    id         = element(sort([for item in local.iam_policies : item if item["name"] == each.value.policy_name]), 0).id
+    id         = element([for item in local.iam_policies : item if item["name"] == each.value.policy_name], 0).id
     boundaries = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key]
   }
 }
