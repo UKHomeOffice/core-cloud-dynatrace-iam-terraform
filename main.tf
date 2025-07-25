@@ -41,7 +41,7 @@ output "iam_policies_k" {
   value = [for k, v in dynatrace_iam_policy.env_policy : k]
 }
 
-output "iam_policies_k" {
+output "iam_policies_v" {
   value = [for k, v in dynatrace_iam_policy.env_policy : v]
 }
 
