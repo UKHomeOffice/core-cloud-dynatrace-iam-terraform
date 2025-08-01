@@ -103,7 +103,7 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   # Find the group by its name
   group = element(
     sort([
-      for group_item in dynatrace_iam_group.cc_iam_group : group_item.id
+      for group_item in dynatrace_iam_group.cc-iam-group : group_item.id
       if group_item.name == each.value.group_name
     ]), 0
   )
