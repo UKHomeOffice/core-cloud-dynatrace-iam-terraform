@@ -23,7 +23,7 @@ resource "dynatrace_iam_policy" "env_policy" {
 # Local Variables to group policies
 # ---------------------------------------------
 locals {
-  # Flatten the `groups_and_permissions` to a helper structure (old key format: group + env only)
+  # Flatten the `groups_and_permissions` to a helper structure 
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
