@@ -119,3 +119,7 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 output "permission_helper" {
   value = local.permission_helper
 }
+
+output "policy_name_id_map" {
+  value = local.policy_ids
+}
