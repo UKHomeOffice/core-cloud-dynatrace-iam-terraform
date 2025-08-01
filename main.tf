@@ -99,7 +99,7 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 
 }
 
-rresource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
+resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
 
   # ---------------------------------------------
