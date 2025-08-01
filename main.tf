@@ -115,7 +115,7 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
 
-  group      = element(sort([for group_item in dynatrace_iam_group.cc_iam_groups : group_item.id if group_item.name == each.value.group_name]), 0)
+  group      = element(sort([for group_item in dynatrace_iam_group.cc-iam-group : group_item.id if group_item.name == each.value.group_name]), 0)
   environment = each.value.env_id
 
   policy {
@@ -125,6 +125,7 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
     boundaries = sort([for boundary_item in dynatrace_iam_policy_boundary.boundaries : boundary_item.id if boundary_item.name == each.key])
   }
 }
+
 
 
 
