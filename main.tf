@@ -1,5 +1,5 @@
 # ---------------------------------------------
-# Data block to fetch all policies (if needed)
+# Data block to fetch all policies
 # ---------------------------------------------
 data "dynatrace_iam_policies" "allPolicies" {
   environments = ["*"]
@@ -20,10 +20,10 @@ resource "dynatrace_iam_policy" "env_policy" {
 }
 
 # ---------------------------------------------
-# Local variables to group policies
+# Local variables to group policies (old key format)
 # ---------------------------------------------
 locals {
-  # Flatten group & policy mapping (OLD KEY FORMAT with prefix)
+  # EXACT old key format without prefix
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
@@ -33,16 +33,16 @@ locals {
         "${group_name}.${policy_name}.${env_id}" => {
           group_name                 = group_name
           policy_name                = policy_name
+          env_id                     = env_id          # keep env_id raw
+          env_params                 = env_params
           group_description          = group_values.group_description
           federated_attribute_values = group_values.federated_attribute_values
-          env_id                     = env_id
-          env_params                 = env_params
         }
       }
     ])
   ])...)
 
-  # Group by group_name and env_id (keep old format key)
+  # Grouped permissions using group + policy + env_id
   grouped_permission_helper = {
     for group_env_key, permission_list in {
       for permission_key, permission_value in local.permission_helper :
@@ -56,7 +56,7 @@ locals {
     }
   }
 
-  # Policy IDs from env_policy resources
+  # Map policy names to IDs
   policy_ids = {
     for p in dynatrace_iam_policy.env_policy :
     p.name => p.id
@@ -64,7 +64,7 @@ locals {
 }
 
 # ---------------------------------------------
-# Create the policy bindings (old format key)
+# Policy bindings
 # ---------------------------------------------
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
@@ -84,7 +84,7 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
 }
 
 # ---------------------------------------------
-# Dynatrace IAM Group
+# Dynatrace IAM Groups
 # ---------------------------------------------
 resource "dynatrace_iam_group" "cc_iam_group" {
   for_each = {
@@ -101,7 +101,7 @@ resource "dynatrace_iam_group" "cc_iam_group" {
 }
 
 # ---------------------------------------------
-# Restore IAM Policy Boundaries (OLD CONFIG with prefix)
+# Policy Boundaries (old key format without prefix)
 # ---------------------------------------------
 resource "dynatrace_iam_policy_boundary" "boundaries" {
   for_each = {
@@ -110,12 +110,12 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
     if v.env_params.policy_boundary != null
   }
 
-  name  = each.key
+  name  = each.key      # "${group_name}.${policy_name}.${env_id}"
   query = each.value
 }
 
 # ---------------------------------------------
-# Outputs for debugging
+# Debug outputs
 # ---------------------------------------------
 output "permission_helper" {
   value = local.permission_helper
