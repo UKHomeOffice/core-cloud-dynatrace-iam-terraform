@@ -1,5 +1,5 @@
 # ---------------------------------------------
-# Data block to fetch all policies (if needed for other purposes)
+# Data block to fetch all policies 
 # ---------------------------------------------
 data "dynatrace_iam_policies" "allPolicies" {
   environments = ["*"]
@@ -8,7 +8,7 @@ data "dynatrace_iam_policies" "allPolicies" {
 }
 
 # ---------------------------------------------
-# Create policies from var.iam_policies (given as input)
+# Create policies from var.iam_policies 
 # ---------------------------------------------
 resource "dynatrace_iam_policy" "env_policy" {
   for_each = var.iam_policies
@@ -42,7 +42,9 @@ locals {
     ])
   ])...)
 
+# ---------------------------------------------------------
   # Group by group_name and env_id to prevent overwriting
+# ---------------------------------------------------------
   grouped_permission_helper = {
     for group_env_key, permission_list in {
       for permission_key, permission_value in local.permission_helper :
@@ -56,16 +58,18 @@ locals {
     }
   }
 
+# ----------------------------------------------
   # Policy IDs from the env_policy resources
+# ----------------------------------------------
   policy_ids = {
     for p in dynatrace_iam_policy.env_policy : 
     p.name => p.id
   }
 }
 
-# ---------------------------------------------
+# ------------------------------------------------------------
 # Create the policy bindings based on the grouped permissions
-# ---------------------------------------------
+# --------------------------------------------------------------
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
 
@@ -78,7 +82,7 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   dynamic "policy" {
     for_each = each.value.policy_names
     content {
-      id         = local.policy_ids[policy.value]  # Policy ID from local.policy_ids
+      id         = local.policy_ids[policy.value]  
       boundaries = []
     }
   }
@@ -113,13 +117,16 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
   query = each.value
 }
 
-# ---------------------------------------------
+# -------------------------------------------------------
 # Output the permission_helper for debugging or inspection
-# ---------------------------------------------
+# ---------------------------------------------------------
 output "permission_helper" {
   value = local.permission_helper
 }
 
+# -------------------------------------------------------
+# Output the policy names
+# ---------------------------------------------------------
 output "policy_name_id_map" {
   value = local.policy_ids
 }
