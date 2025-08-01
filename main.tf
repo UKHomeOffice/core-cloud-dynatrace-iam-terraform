@@ -66,7 +66,7 @@ locals {
   grouped_permission_helper = {
     for group_env_key, permission_list in {
       for permission_key, permission_value in local.permission_helper :
-      # Group by the key <group_name>-<env_id> 
+      # Group by the key <group_name>-<env_id>
       "${permission_value.group_name}-${permission_value.env_id}" => permission_value...
     } :
     group_env_key => {
@@ -79,13 +79,15 @@ locals {
   }
 }
 
-resource "dynatrace_iam_group" "cc-iam-group" {
+
+resource "dynatrace_iam_group" "cc_iam_group" {
   for_each = var.groups_and_permissions
 
   name                       = each.key
   description                = each.value.group_description
   federated_attribute_values = each.value.federated_attribute_values
 }
+
 
 resource "dynatrace_iam_policy_boundary" "boundaries" {
   for_each = {
@@ -100,36 +102,64 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
 
-  # Find the group by its name
-  group = element(
-    sort([
-      for group_item in dynatrace_iam_group.cc-iam-group : group_item.id
-      if group_item.name == each.value.group_name
-    ]), 0
+  # ---------------------------------------------
+  # Validate group existence before binding
+  # ---------------------------------------------
+  group = try(
+    element(
+      sort([
+        for group_resource in dynatrace_iam_group.cc_iam_group :
+        group_resource.id
+        if group_resource.name == each.value.group_name
+      ]),
+      0
+    ),
+    terraform.fail("Group '${each.value.group_name}' in grouped_permission_helper does not exist in dynatrace_iam_group.cc_iam_group")
   )
 
-  # Use the environment ID
   environment = each.value.env_id
 
-  # Define the policy bindings
-  policy {
-    id         = element(
-      sort([
-        for policy_item in dynatrace_iam_policy.env_policy :
-        policy_item.id
-        if contains(each.value.policy_names, policy_item.name)
-      ]), 0
-    )
-    parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
-    metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : null
+  # ---------------------------------------------
+  # Policy Binding
+  # ---------------------------------------------
+  dynamic "policy" {
+    for_each = [
+      for policy_name in each.value.policy_names :
+      {
+        policy_id = try(
+          element(
+            sort([
+              for policy_resource in dynatrace_iam_policy.env_policy :
+              policy_resource.id
+              if policy_resource.name == policy_name
+            ]),
+            0
+          ),
+          terraform.fail("Policy '${policy_name}' in group '${each.value.group_name}' does not exist in dynatrace_iam_policy.env_policy")
+        )
+      }
+    ]
 
-    # Define boundaries
-    boundaries = sort([
-      for boundary_item in dynatrace_iam_policy_boundary.boundaries :
-      boundary_item.id if boundary_item.name == each.key
-    ])
+    content {
+      id         = policy.value.policy_id
+      parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
+      metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : null
+
+      # ---------------------------------------------
+      # Validate boundaries existence before binding
+      # ---------------------------------------------
+      boundaries = try(
+        sort([
+          for boundary_item in dynatrace_iam_policy_boundary.boundaries :
+          boundary_item.id
+          if boundary_item.name == each.key
+        ]),
+        terraform.fail("Boundary for '${each.key}' does not exist in dynatrace_iam_policy_boundary.boundaries")
+      )
+    }
   }
 }
+
 
 output "permission_helper" {
   value = local.permission_helper
