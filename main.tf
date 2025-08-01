@@ -83,7 +83,7 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
     for_each = each.value.policy_names
     content {
       id         = local.policy_ids[policy.value]  
-      boundaries = []
+      # boundaries = []
     }
   }
 }
