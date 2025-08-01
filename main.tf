@@ -1,5 +1,5 @@
 # ---------------------------------------------
-# Step 1: Data block to fetch all policies (if needed for other purposes)
+# Data block to fetch all policies (if needed for other purposes)
 # ---------------------------------------------
 data "dynatrace_iam_policies" "allPolicies" {
   environments = ["*"]
@@ -8,7 +8,7 @@ data "dynatrace_iam_policies" "allPolicies" {
 }
 
 # ---------------------------------------------
-# Step 2: Create policies from var.iam_policies (given as input)
+# Create policies from var.iam_policies (given as input)
 # ---------------------------------------------
 resource "dynatrace_iam_policy" "env_policy" {
   for_each = var.iam_policies
@@ -20,10 +20,10 @@ resource "dynatrace_iam_policy" "env_policy" {
 }
 
 # ---------------------------------------------
-# Step 3: Local Variables to group policies
+#  Local Variables to group policies
 # ---------------------------------------------
 locals {
-  # Step 3.1: Flatten the `groups_and_permissions` to a helper structure
+  # Flatten the `groups_and_permissions` to a helper structure
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
@@ -42,7 +42,7 @@ locals {
     ])
   ])...)
 
-  # Step 3.2: Group by group_name and env_id to prevent overwriting
+  # Group by group_name and env_id to prevent overwriting
   grouped_permission_helper = {
     for group_env_key, permission_list in {
       for permission_key, permission_value in local.permission_helper :
@@ -56,7 +56,7 @@ locals {
     }
   }
 
-  # Step 3.3: Policy IDs from the env_policy resources
+  # Policy IDs from the env_policy resources
   policy_ids = {
     for p in dynatrace_iam_policy.env_policy : 
     p.name => p.id
@@ -64,7 +64,7 @@ locals {
 }
 
 # ---------------------------------------------
-# Step 4: Create the policy bindings based on the grouped permissions
+# Create the policy bindings based on the grouped permissions
 # ---------------------------------------------
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
