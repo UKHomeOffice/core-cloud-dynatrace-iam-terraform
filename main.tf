@@ -107,13 +107,6 @@ resource "dynatrace_iam_group" "cc_iam_group" {
 }
 
 
-resource "dynatrace_iam_group" "cc_iam_group" {
-  for_each = var.groups_and_permissions
-
-  name                       = each.key
-  description                = each.value.group_description
-  federated_attribute_values = each.value.federated_attribute_values
-}
 
 
 resource "dynatrace_iam_policy_boundary" "boundaries" {
