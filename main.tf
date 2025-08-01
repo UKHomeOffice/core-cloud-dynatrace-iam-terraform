@@ -105,12 +105,12 @@ resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
   for_each = local.grouped_permission_helper
 
   group = element(
-    sort([
-      for group_item in dynatrace_iam_group.cc_iam_groups : group_item.id
-      if group_item.name == each.value.group_name
-    ]), 
-    0
-  )
+  sort([
+    for group_item in data.dynatrace_iam_groups.cc_iam_groups.groups : group_item.id
+    if group_item.name == each.value.group_name
+  ]),
+  0
+)
 
   environment = each.value.env_id
 
