@@ -1,5 +1,5 @@
 # ---------------------------------------------
-# Data block to fetch all policies (if needed)
+# Data block to fetch all policies
 # ---------------------------------------------
 data "dynatrace_iam_policies" "allPolicies" {
   environments = ["*"]
@@ -20,41 +20,43 @@ resource "dynatrace_iam_policy" "env_policy" {
 }
 
 # ---------------------------------------------
-# Local variables to group policies
+# Local Variables to group policies
 # ---------------------------------------------
 locals {
-  # Flatten group & policy mapping
+  # Flatten the `groups_and_permissions` to a helper structure (old key format: group + env only)
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
       for policy_name, policy_values in group_values.attached_policies :
       {
         for env_id, env_params in policy_values :
-        "${group_name}.${policy_name}.${env_id}" => {
+        "${group_name}-${env_id}" => {
           group_name                 = group_name
           policy_name                = policy_name
           group_description          = group_values.group_description
           federated_attribute_values = group_values.federated_attribute_values
           env_id                     = env_id
+          env_params                 = env_params
         }
       }
     ])
   ])...)
 
-  # Group by Group + Env 
+  # Group by group_name and env_id to avoid overwriting
   grouped_permission_helper = {
     for group_env_key, permission_list in {
       for permission_key, permission_value in local.permission_helper :
-      "PERM-C-DYNA-${permission_value.group_name}-${permission_value.env_id}" => permission_value...
+      "${permission_value.group_name}-${permission_value.env_id}" => permission_value...
     } :
     group_env_key => {
       group_name   = permission_list[0].group_name
       env_id       = permission_list[0].env_id
+      env_params   = permission_list[0].env_params
       policy_names = [for p in permission_list : p.policy_name]
     }
   }
 
-  # Policy name → Policy ID mapping
+  # Policy IDs from the env_policy resources
   policy_ids = {
     for p in dynatrace_iam_policy.env_policy : 
     p.name => p.id
@@ -62,7 +64,7 @@ locals {
 }
 
 # ---------------------------------------------
-# Create policy bindings
+# Create the policy bindings based on the grouped permissions
 # ---------------------------------------------
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
@@ -76,13 +78,13 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   dynamic "policy" {
     for_each = each.value.policy_names
     content {
-      id = local.policy_ids[policy.value]
+      id = local.policy_ids[policy.value]  # Policy ID from local.policy_ids
     }
   }
 }
 
 # ---------------------------------------------
-# Dynatrace IAM group creation
+# Dynatrace IAM Group
 # ---------------------------------------------
 resource "dynatrace_iam_group" "cc_iam_group" {
   for_each = {
@@ -99,7 +101,7 @@ resource "dynatrace_iam_group" "cc_iam_group" {
 }
 
 # ---------------------------------------------
-# Debug outputs
+# Output for debugging or inspection
 # ---------------------------------------------
 output "permission_helper" {
   value = local.permission_helper
