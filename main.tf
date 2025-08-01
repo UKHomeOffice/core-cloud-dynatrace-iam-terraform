@@ -13,13 +13,36 @@ resource "dynatrace_iam_policy" "env_policy" {
   statement_query = each.value.policy_statement
 }
 
+# locals {
+#   permission_helper = merge(flatten([
+#     for group_name, group_values in var.groups_and_permissions :
+#     flatten([
+#       for policy_name, policy_values in group_values.attached_policies :
+#       {
+#         for env_id, env_params in policy_values : "${group_name}.${policy_name}.${env_id}" =>
+#         {
+#           "group_name"                 = group_name
+#           "policy_name"                = policy_name
+#           "group_description"          = group_values.group_description
+#           "federated_attribute_values" = group_values.federated_attribute_values
+#           "env_id"                     = env_id
+#           "env_params"                 = env_params
+#         }
+#       }
+#     ])
+#   ])...)
+
+#   iam_policies = concat(data.dynatrace_iam_policies.allPolicies.policies, [for k, v in dynatrace_iam_policy.env_policy : v])
+# }
 locals {
-  permission_helper = merge(flatten([
+  # Permission helper
+  permission_helper = flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
       for policy_name, policy_values in group_values.attached_policies :
       {
-        for env_id, env_params in policy_values : "${group_name}.${policy_name}.${env_id}" =>
+        for env_id, env_params in policy_values :
+        "${group_name}.${policy_name}.${env_id}" =>
         {
           "group_name"                 = group_name
           "policy_name"                = policy_name
@@ -30,9 +53,33 @@ locals {
         }
       }
     ])
-  ])...)
+  ])
 
-  iam_policies = concat(data.dynatrace_iam_policies.allPolicies.policies, [for k, v in dynatrace_iam_policy.env_policy : v])
+  # Grouped permission helper
+  grouped_permission_helper = {
+    for group_env_key, permission_list in {
+      # Group permissions by group_name + env_id combination
+      for permission in local.permission_helper :
+      "${permission.group_name}-${permission.env_id}" => permission
+    } :
+    group_env_key => {
+      group_name   = permission_list[0].group_name
+      env_id       = permission_list[0].env_id
+      env_params   = permission_list[0].env_params
+
+      # Collect all policy names for this group/environment
+      policy_names = [for permission_item in permission_list : permission_item.policy_name]
+    }
+  }
+
+  # Define IAM policies, fetched via a data source
+  iam_policies = flatten([
+    for policy in data.dynatrace_iam_policies.allPolicies.policies :
+    {
+      id   = policy.id
+      name = policy.name
+    }
+  ])
 }
 
 resource "dynatrace_iam_group" "cc-iam-group" {
@@ -53,19 +100,36 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 
 }
 
+# The dynatrace_iam_policy_bindings_v2 resource
 resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
-  for_each = local.permission_helper
+  for_each = local.grouped_permission_helper
 
-  group = element(sort([for item in dynatrace_iam_group.cc-iam-group : item.id
-   if item.name == each.value.group_name]), 0)
+  group = element(
+    sort([
+      for group_item in dynatrace_iam_group.cc_iam_groups : group_item.id
+      if group_item.name == each.value.group_name
+    ]), 
+    0
+  )
 
   environment = each.value.env_id
 
   policy {
-    id         = element(sort([for item in local.iam_policies : item.id if item.name == each.value.policy_name]), 0)
+    id = element(
+      sort([
+        for policy_item in local.iam_policies : policy_item.id
+        if policy_item.name == each.value.policy_names[0]
+      ]), 
+      0
+    )
+    
     parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
     metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : null
-    boundaries = sort([for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key])
+
+    boundaries = sort([
+      for boundary_item in dynatrace_iam_policy_boundary.boundaries : boundary_item.id
+      if boundary_item.name == each.key
+    ])
   }
 }
 
