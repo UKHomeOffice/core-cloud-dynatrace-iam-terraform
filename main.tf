@@ -46,7 +46,7 @@ locals {
   grouped_permission_helper = {
     for group_env_key, permission_list in {
       for permission_key, permission_value in local.permission_helper :
-      "${permission_value.group_name}-${permission_value.env_id}" => permission_value...
+      "${permission_value.group_name}.${permission_value.policy_name}.${permission_value.env_id}" => permission_value...
     } :
     group_env_key => {
       group_name   = permission_list[0].group_name
