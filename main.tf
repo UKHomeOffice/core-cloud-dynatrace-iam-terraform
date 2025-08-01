@@ -167,11 +167,19 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   # ---------------------------------------------
   lifecycle {
     precondition {
-      condition     = group != null
+      # Validate the group based on the result of the element expression
+      condition     = length(
+        sort([
+          for group_resource in dynatrace_iam_group.cc_iam_group :
+          group_resource.id
+          if group_resource.name == each.value.group_name
+        ])
+      ) > 0
       error_message = "Group '${each.value.group_name}' does not exist in dynatrace_iam_group.cc_iam_group"
     }
   }
 }
+
 
 output "permission_helper" {
   value = local.permission_helper
