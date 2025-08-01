@@ -103,25 +103,22 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
 
   # ---------------------------------------------
-  # Validate group existence before binding
+  # Get group ID based on group name
   # ---------------------------------------------
-  group = element(
+  group = length(
+    sort([
+      for group_resource in dynatrace_iam_group.cc_iam_group :
+      group_resource.id
+      if group_resource.name == each.value.group_name
+    ])
+  ) > 0 ? element(
     sort([
       for group_resource in dynatrace_iam_group.cc_iam_group :
       group_resource.id
       if group_resource.name == each.value.group_name
     ]),
-    0,
-    null
-  )
-
-  # Handle missing group with an error message if no group is found
-  lifecycle {
-    precondition {
-      condition     = group != null
-      error_message = "Group '${each.value.group_name}' does not exist in dynatrace_iam_group.cc_iam_group"
-    }
-  }
+    0
+  ) : null
 
   environment = each.value.env_id
 
@@ -132,15 +129,20 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
     for_each = [
       for policy_name in each.value.policy_names :
       {
-        policy_id = element(
+        policy_id = length(
+          sort([
+            for policy_resource in dynatrace_iam_policy.env_policy :
+            policy_resource.id
+            if policy_resource.name == policy_name
+          ])
+        ) > 0 ? element(
           sort([
             for policy_resource in dynatrace_iam_policy.env_policy :
             policy_resource.id
             if policy_resource.name == policy_name
           ]),
-          0,
-          null
-        )
+          0
+        ) : null
       }
     ]
 
@@ -159,9 +161,17 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
       ])
     }
   }
+
+  # ---------------------------------------------
+  # Validate group existence before binding
+  # ---------------------------------------------
+  lifecycle {
+    precondition {
+      condition     = group != null
+      error_message = "Group '${each.value.group_name}' does not exist in dynatrace_iam_group.cc_iam_group"
+    }
+  }
 }
-
-
 
 output "permission_helper" {
   value = local.permission_helper
