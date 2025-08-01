@@ -30,7 +30,7 @@ locals {
       for policy_name, policy_values in group_values.attached_policies :
       {
         for env_id, env_params in policy_values :
-        "PERM-C-DYNA-${group_name}.${policy_name}.${env_id}" => {
+        "${group_name}.${policy_name}.${env_id}" => {
           group_name                 = group_name
           policy_name                = policy_name
           group_description          = group_values.group_description
@@ -46,7 +46,7 @@ locals {
   grouped_permission_helper = {
     for group_env_key, permission_list in {
       for permission_key, permission_value in local.permission_helper :
-      "PERM-C-DYNA-${permission_value.group_name}.${permission_value.policy_name}.${permission_value.env_id}" => permission_value...
+      "${permission_value.group_name}.${permission_value.policy_name}.${permission_value.env_id}" => permission_value...
     } :
     group_env_key => {
       group_name   = permission_list[0].group_name
