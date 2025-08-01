@@ -1,5 +1,5 @@
 # ---------------------------------------------
-# Data block to fetch all policies 
+# Data block to fetch all policies (if needed)
 # ---------------------------------------------
 data "dynatrace_iam_policies" "allPolicies" {
   environments = ["*"]
@@ -8,7 +8,7 @@ data "dynatrace_iam_policies" "allPolicies" {
 }
 
 # ---------------------------------------------
-# Create policies from var.iam_policies 
+# Create policies from var.iam_policies
 # ---------------------------------------------
 resource "dynatrace_iam_policy" "env_policy" {
   for_each = var.iam_policies
@@ -20,10 +20,10 @@ resource "dynatrace_iam_policy" "env_policy" {
 }
 
 # ---------------------------------------------
-#  Local Variables to group policies
+# Local variables to group policies
 # ---------------------------------------------
 locals {
-  # Flatten the `groups_and_permissions` to a helper structure
+  # Flatten group & policy mapping
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
@@ -36,40 +36,34 @@ locals {
           group_description          = group_values.group_description
           federated_attribute_values = group_values.federated_attribute_values
           env_id                     = env_id
-          env_params                 = env_params
         }
       }
     ])
   ])...)
 
-# ---------------------------------------------------------
-  # Group by group_name and env_id to prevent overwriting
-# ---------------------------------------------------------
+  # Group by Group + Env 
   grouped_permission_helper = {
     for group_env_key, permission_list in {
       for permission_key, permission_value in local.permission_helper :
-      "${permission_value.group_name}.${permission_value.policy_name}.${permission_value.env_id}" => permission_value...
+      "PERM-C-DYNA-${permission_value.group_name}-${permission_value.env_id}" => permission_value...
     } :
     group_env_key => {
       group_name   = permission_list[0].group_name
       env_id       = permission_list[0].env_id
-      env_params   = permission_list[0].env_params
       policy_names = [for p in permission_list : p.policy_name]
     }
   }
 
-# ----------------------------------------------
-  # Policy IDs from the env_policy resources
-# ----------------------------------------------
+  # Policy name → Policy ID mapping
   policy_ids = {
     for p in dynatrace_iam_policy.env_policy : 
     p.name => p.id
   }
 }
 
-# ------------------------------------------------------------
-# Create the policy bindings based on the grouped permissions
-# --------------------------------------------------------------
+# ---------------------------------------------
+# Create policy bindings
+# ---------------------------------------------
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
 
@@ -82,15 +76,14 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   dynamic "policy" {
     for_each = each.value.policy_names
     content {
-      id         = local.policy_ids[policy.value]  
-      # boundaries = []
+      id = local.policy_ids[policy.value]
     }
   }
 }
 
-# --------------------------------------------------
-# Dynatrace IAM Group
-# --------------------------------------------------
+# ---------------------------------------------
+# Dynatrace IAM group creation
+# ---------------------------------------------
 resource "dynatrace_iam_group" "cc_iam_group" {
   for_each = {
     for group_name, group_values in var.groups_and_permissions :
@@ -106,27 +99,12 @@ resource "dynatrace_iam_group" "cc_iam_group" {
 }
 
 # ---------------------------------------------
-# Create IAM Policy Boundaries
+# Debug outputs
 # ---------------------------------------------
-resource "dynatrace_iam_policy_boundary" "boundaries" {
-  for_each = {
-    for k, v in local.permission_helper : k => v.env_params.policy_boundary if v.env_params.policy_boundary != null
-  }
-
-  name  = each.key
-  query = each.value
-}
-
-# -------------------------------------------------------
-# Output the permission_helper for debugging or inspection
-# ---------------------------------------------------------
 output "permission_helper" {
   value = local.permission_helper
 }
 
-# -------------------------------------------------------
-# Output the policy names
-# ---------------------------------------------------------
 output "policy_name_id_map" {
   value = local.policy_ids
 }
