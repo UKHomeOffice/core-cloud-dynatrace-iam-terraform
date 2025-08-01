@@ -103,22 +103,37 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
   for_each = local.grouped_permission_helper
 
-  # Directly reference the group from dynatrace_iam_group
-  group       = dynatrace_iam_group.cc-iam-group[each.value.group_name].id
+  group = element(
+    sort([
+      for group_item in dynatrace_iam_group.cc-iam-group :
+      group_item.id
+      if group_item.name == each.value.group_name
+    ]),
+    0
+  )
+
   environment = each.value.env_id
 
-  policy {
-    id         = element(
-                   sort([for policy_item in dynatrace_iam_policy.env_policy : policy_item.id
-                     if policy_item.name in each.value.policy_names]),
-                   0
-                 )
-    parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
-    metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : null
-    # Boundaries optional depending on your use case
-    boundaries = []
+  dynamic "policy" {
+    for_each = [
+      for policy_item in dynatrace_iam_policy.env_policy :
+      policy_item
+      if contains(each.value.policy_names, policy_item.name)
+    ]
+
+    content {
+      id         = policy.value.id
+      parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
+      metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata   : null
+      boundaries = sort([
+        for boundary_item in dynatrace_iam_policy_boundary.boundaries :
+        boundary_item.id
+        if boundary_item.name == each.key
+      ])
+    }
   }
 }
+
 
 
 output "permission_helper" {
