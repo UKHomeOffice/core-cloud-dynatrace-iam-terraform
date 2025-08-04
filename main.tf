@@ -20,10 +20,10 @@ resource "dynatrace_iam_policy" "env_policy" {
 }
 
 # ---------------------------------------------
-# Local variables to group policies (old key format)
+# Local variables to group policies
 # ---------------------------------------------
 locals {
-  # Flatten groups_and_permissions into triple keys
+  # Flatten groups_and_permissions into a permission helper structure (with the old format)
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
@@ -42,14 +42,14 @@ locals {
     ])
   ])...)
 
-  # Group permissions by exact triple key (no renaming)
+  # Group permissions by the unique combination of group_name and env_id
   grouped_permission_helper = {
     for permission_key, permission_value in local.permission_helper :
-    permission_key => {
+    "${permission_value.group_name}-${permission_value.env_id}" => {
       group_name   = permission_value.group_name
-      policy_name  = permission_value.policy_name
       env_id       = permission_value.env_id
-      env_params   = permission_value.env_params
+      policy_names = distinct([for p in local.permission_helper : 
+                      p.policy_name if p.group_name == permission_value.group_name && p.env_id == permission_value.env_id])
     }
   }
 
@@ -58,26 +58,13 @@ locals {
     for p in dynatrace_iam_policy.env_policy : 
     p.name => p.id
   }
-
-  # Combine policies under the same group + env, ensuring no duplication
-  combined_permissions = {
-    for key, permissions in local.grouped_permission_helper :
-    # Here, we ensure that we combine policies for the same group_name and env_id
-    # by creating unique keys and grouping policy names into a list
-    "${permissions.group_name}-${permissions.env_id}" => {
-      group_name   = permissions.group_name
-      env_id       = permissions.env_id
-      policy_names = distinct([for p in local.grouped_permission_helper : 
-                      p.policy_name if p.group_name == permissions.group_name && p.env_id == permissions.env_id])
-    }
-  }
 }
 
 # ---------------------------------------------
-# Create policy bindings (old key format triple with multiple policies per binding)
+# Create policy bindings (handling multiple policies for the same group+env)
 # ---------------------------------------------
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
-  for_each = local.combined_permissions
+  for_each = local.grouped_permission_helper
 
   group       = element(
     [for g in dynatrace_iam_group.cc_iam_group : g.id if g.name == each.value.group_name],
@@ -111,7 +98,7 @@ resource "dynatrace_iam_group" "cc_iam_group" {
 }
 
 # ---------------------------------------------
-# Policy Boundaries (old exact naming format)
+# Policy Boundaries (restored with the old format)
 # ---------------------------------------------
 resource "dynatrace_iam_policy_boundary" "boundaries" {
   for_each = {
