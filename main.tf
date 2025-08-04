@@ -1,5 +1,5 @@
 # ---------------------------------------------
-# Data block to fetch all policies
+# Fetch all IAM policies
 # ---------------------------------------------
 data "dynatrace_iam_policies" "allPolicies" {
   environments = ["*"]
@@ -8,7 +8,7 @@ data "dynatrace_iam_policies" "allPolicies" {
 }
 
 # ---------------------------------------------
-# Create policies from var.iam_policies
+# Create IAM policies from var.iam_policies
 # ---------------------------------------------
 resource "dynatrace_iam_policy" "env_policy" {
   for_each = var.iam_policies
@@ -20,10 +20,10 @@ resource "dynatrace_iam_policy" "env_policy" {
 }
 
 # ---------------------------------------------
-# Local variables to group policies (old key format)
+# Local variables (old key format)
 # ---------------------------------------------
 locals {
-  # EXACT old key format without prefix
+  # Flatten attached policies (old key format with policy name included)
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
@@ -33,16 +33,16 @@ locals {
         "${group_name}.${policy_name}.${env_id}" => {
           group_name                 = group_name
           policy_name                = policy_name
-          env_id                     = env_id          # keep env_id raw
-          env_params                 = env_params
           group_description          = group_values.group_description
           federated_attribute_values = group_values.federated_attribute_values
+          env_id                     = env_id
+          env_params                 = env_params
         }
       }
     ])
   ])...)
 
-  # Grouped permissions using group + policy + env_id
+  # Group by group_name + env_id (maintaining old key format)
   grouped_permission_helper = {
     for group_env_key, permission_list in {
       for permission_key, permission_value in local.permission_helper :
@@ -50,13 +50,12 @@ locals {
     } :
     group_env_key => {
       group_name   = permission_list[0].group_name
-      policy_name  = permission_list[0].policy_name
       env_id       = permission_list[0].env_id
-      env_params   = permission_list[0].env_params
+      policy_names = [for p in permission_list : p.policy_name]
     }
   }
 
-  # Map policy names to IDs
+  # Policy name → Policy ID mapping
   policy_ids = {
     for p in dynatrace_iam_policy.env_policy :
     p.name => p.id
@@ -64,27 +63,7 @@ locals {
 }
 
 # ---------------------------------------------
-# Policy bindings
-# ---------------------------------------------
-resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
-  for_each = local.grouped_permission_helper
-
-  group       = element(
-    [for g in dynatrace_iam_group.cc_iam_group : g.id if g.name == each.value.group_name],
-    0
-  )
-  environment = each.value.env_id
-
-  dynamic "policy" {
-    for_each = [each.value.policy_name]
-    content {
-      id = local.policy_ids[policy.value]
-    }
-  }
-}
-
-# ---------------------------------------------
-# Dynatrace IAM Groups
+# Create IAM Groups
 # ---------------------------------------------
 resource "dynatrace_iam_group" "cc_iam_group" {
   for_each = {
@@ -101,17 +80,37 @@ resource "dynatrace_iam_group" "cc_iam_group" {
 }
 
 # ---------------------------------------------
-# Policy Boundaries (old key format without prefix)
+# Create Policy Boundaries (exact old names)
 # ---------------------------------------------
 resource "dynatrace_iam_policy_boundary" "boundaries" {
   for_each = {
     for k, v in local.permission_helper :
-    k => v.env_params.policy_boundary
+    "${v.group_name}.${v.policy_name}.${v.env_id}" => v.env_params.policy_boundary
     if v.env_params.policy_boundary != null
   }
 
-  name  = each.key      # "${group_name}.${policy_name}.${env_id}"
+  name  = each.key
   query = each.value
+}
+
+# ---------------------------------------------
+# Create Policy Bindings (dynamic policies preserved)
+# ---------------------------------------------
+resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
+  for_each = local.grouped_permission_helper
+
+  group       = element(
+    [for g in dynatrace_iam_group.cc_iam_group : g.id if g.name == each.value.group_name],
+    0
+  )
+  environment = each.value.env_id
+
+  dynamic "policy" {
+    for_each = each.value.policy_names
+    content {
+      id = local.policy_ids[policy.value]
+    }
+  }
 }
 
 # ---------------------------------------------
