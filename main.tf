@@ -45,11 +45,15 @@ locals {
   # Group permissions by the unique combination of group_name and env_id
   grouped_permission_helper = {
     for permission_key, permission_value in local.permission_helper :
-    "${permission_value.group_name}-${permission_value.env_id}" => {
-      group_name   = permission_value.group_name
-      env_id       = permission_value.env_id
-      policy_names = distinct([for p in local.permission_helper : 
-                      p.policy_name if p.group_name == permission_value.group_name && p.env_id == permission_value.env_id])
+    "${permission_value.group_name}-${permission_value.env_id}" => permission_value...
+  }
+
+  combined_permissions = {
+    for combo_key, permissions in local.grouped_permission_helper :
+    combo_key => {
+      group_name   = permissions[0].group_name
+      env_id       = permissions[0].env_id
+      policy_names = distinct([for p in permissions : p.policy_name])
     }
   }
 
