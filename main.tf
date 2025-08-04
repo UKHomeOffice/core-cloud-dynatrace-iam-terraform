@@ -20,10 +20,10 @@ resource "dynatrace_iam_policy" "env_policy" {
 }
 
 # ---------------------------------------------
-# Local variables to group policies
+# Local variables to group policies (old key format)
 # ---------------------------------------------
 locals {
-  # Flatten with OLD key format (group.policy.env)
+  # Flatten groups_and_permissions into triple keys
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
@@ -42,46 +42,40 @@ locals {
     ])
   ])...)
 
-  # Group by group_name + env_id to collect policies
+  # Group permissions by exact triple key (no renaming)
   grouped_permission_helper = {
-    for group_env_key, permission_list in {
-      for permission_key, permission_value in local.permission_helper :
-      "${permission_value.group_name}.${permission_value.env_id}" => permission_value...
-    } :
-    group_env_key => {
-      group_name   = permission_list[0].group_name
-      env_id       = permission_list[0].env_id
-      env_params   = permission_list[0].env_params
-      policy_names = [for p in permission_list : p.policy_name]
+    for permission_key, permission_value in local.permission_helper :
+    permission_key => {
+      group_name   = permission_value.group_name
+      policy_name  = permission_value.policy_name
+      env_id       = permission_value.env_id
+      env_params   = permission_value.env_params
     }
   }
 
-  # Policy IDs from env_policy
+  # Policy IDs from the env_policy resources
   policy_ids = {
     for p in dynatrace_iam_policy.env_policy : 
     p.name => p.id
   }
-}
 
-# ---------------------------------------------
-# Create policy boundaries (restored as before)
-# ---------------------------------------------
-resource "dynatrace_iam_policy_boundary" "boundaries" {
-  for_each = {
-    for k, v in local.permission_helper : 
-    k => v.env_params.policy_boundary 
-    if v.env_params.policy_boundary != null
+  # Combine policies under the same group + env
+  combined_permissions = {
+    for key, permissions in local.grouped_permission_helper :
+    "${permissions.group_name}-${permissions.env_id}" => {
+      group_name   = permissions.group_name
+      env_id       = permissions.env_id
+      policy_names = [for p in local.grouped_permission_helper : 
+                      p.policy_name if p.group_name == permissions.group_name && p.env_id == permissions.env_id]
+    }
   }
-
-  name  = each.key
-  query = each.value
 }
 
 # ---------------------------------------------
-# Create policy bindings (sorted policies to avoid recreate)
+# Create policy bindings (old key format triple with multiple policies per binding)
 # ---------------------------------------------
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
-  for_each = local.grouped_permission_helper
+  for_each = local.combined_permissions
 
   group       = element(
     [for g in dynatrace_iam_group.cc_iam_group : g.id if g.name == each.value.group_name],
@@ -90,8 +84,7 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   environment = each.value.env_id
 
   dynamic "policy" {
-    # Sort policy list for stable ordering
-    for_each = sort(each.value.policy_names)
+    for_each = each.value.policy_names
     content {
       id = local.policy_ids[policy.value]
     }
@@ -99,7 +92,7 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
 }
 
 # ---------------------------------------------
-# Dynatrace IAM groups
+# Dynatrace IAM Group
 # ---------------------------------------------
 resource "dynatrace_iam_group" "cc_iam_group" {
   for_each = {
@@ -116,7 +109,21 @@ resource "dynatrace_iam_group" "cc_iam_group" {
 }
 
 # ---------------------------------------------
-# Debug outputs
+# Policy Boundaries (old exact naming format)
+# ---------------------------------------------
+resource "dynatrace_iam_policy_boundary" "boundaries" {
+  for_each = {
+    for k, v in local.permission_helper : 
+    k => v.env_params.policy_boundary 
+    if v.env_params.policy_boundary != null
+  }
+
+  name  = each.key
+  query = each.value
+}
+
+# ---------------------------------------------
+# Outputs for debugging
 # ---------------------------------------------
 output "permission_helper" {
   value = local.permission_helper
