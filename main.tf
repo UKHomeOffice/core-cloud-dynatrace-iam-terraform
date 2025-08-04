@@ -59,14 +59,16 @@ locals {
     p.name => p.id
   }
 
-  # Combine policies under the same group + env
+  # Combine policies under the same group + env, ensuring no duplication
   combined_permissions = {
     for key, permissions in local.grouped_permission_helper :
+    # Here, we ensure that we combine policies for the same group_name and env_id
+    # by creating unique keys and grouping policy names into a list
     "${permissions.group_name}-${permissions.env_id}" => {
       group_name   = permissions.group_name
       env_id       = permissions.env_id
-      policy_names = [for p in local.grouped_permission_helper : 
-                      p.policy_name if p.group_name == permissions.group_name && p.env_id == permissions.env_id]
+      policy_names = distinct([for p in local.grouped_permission_helper : 
+                      p.policy_name if p.group_name == permissions.group_name && p.env_id == permissions.env_id])
     }
   }
 }
