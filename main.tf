@@ -23,7 +23,7 @@ resource "dynatrace_iam_policy" "env_policy" {
 # Local variables to group policies
 # ---------------------------------------------
 locals {
-  # Flatten groups_and_permissions into a permission helper structure (with the old format)
+  # Flatten groups_and_permissions into a permission helper map
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
     flatten([
@@ -42,18 +42,16 @@ locals {
     ])
   ])...)
 
-  # Group permissions by the unique combination of group_name and env_id
+  # Group permissions by group_name + env_id
   grouped_permission_helper = {
-    for permission_key, permission_value in local.permission_helper :
-    "${permission_value.group_name}-${permission_value.env_id}" => permission_value...
-  }
-
-  combined_permissions = {
-    for combo_key, permissions in local.grouped_permission_helper :
+    for combo_key, permissions in {
+      for p in local.permission_helper :
+      "${p.group_name}-${p.env_id}" => p...
+    } :
     combo_key => {
       group_name   = permissions[0].group_name
       env_id       = permissions[0].env_id
-      policy_names = distinct([for p in permissions : p.policy_name])
+      policy_names = distinct([for perm in permissions : perm.policy_name])
     }
   }
 
@@ -65,7 +63,7 @@ locals {
 }
 
 # ---------------------------------------------
-# Create policy bindings (handling multiple policies for the same group+env)
+# Create policy bindings (fixed tuple issue)
 # ---------------------------------------------
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
@@ -102,7 +100,7 @@ resource "dynatrace_iam_group" "cc_iam_group" {
 }
 
 # ---------------------------------------------
-# Policy Boundaries (restored with the old format)
+# Policy Boundaries
 # ---------------------------------------------
 resource "dynatrace_iam_policy_boundary" "boundaries" {
   for_each = {
