@@ -94,7 +94,7 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 }
 
 # ---------------------------------------------
-# Create Policy Bindings (dynamic policies preserved)
+# Create Policy Bindings (sorted policy list to prevent destroy/recreate)
 # ---------------------------------------------
 resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   for_each = local.grouped_permission_helper
@@ -106,12 +106,14 @@ resource "dynatrace_iam_policy_bindings_v2" "cc_policy_bindings" {
   environment = each.value.env_id
 
   dynamic "policy" {
-    for_each = each.value.policy_names
+    # Sort policies to keep order stable
+    for_each = sort(each.value.policy_names)
     content {
       id = local.policy_ids[policy.value]
     }
   }
 }
+
 
 # ---------------------------------------------
 # Debug outputs
