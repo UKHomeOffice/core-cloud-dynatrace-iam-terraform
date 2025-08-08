@@ -4,15 +4,6 @@ data "dynatrace_iam_policies" "allPolicies" {
   global       = true
 }
 
-resource "dynatrace_iam_policy" "env_policy" {
-  for_each = var.iam_policies
-
-  name            = each.key
-  description     = each.value.policy_description
-  account         = var.accountUUID
-  statement_query = each.value.policy_statement
-}
-
 locals {
   permission_helper = merge(flatten([
     for group_name, group_values in var.groups_and_permissions :
