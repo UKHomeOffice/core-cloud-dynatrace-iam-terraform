@@ -23,7 +23,7 @@ locals {
     ])
   ])...)
 
-  iam_policies = concat(data.dynatrace_iam_policies.allPolicies.policies, [for k, v in dynatrace_iam_policy.env_policy : v])
+  iam_policies = data.dynatrace_iam_policies.allPolicies.policies
 }
 
 resource "dynatrace_iam_group" "cc-iam-group" {

@@ -26,4 +26,3 @@ variable "groups_and_permissions" {
 
 
 
-variable "iam_policies" {}
