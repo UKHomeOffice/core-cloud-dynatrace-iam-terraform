@@ -24,6 +24,6 @@ variable "groups_and_permissions" {
   default     = {}
 }
 
-variable "accountUUID" {}
+
 
 variable "iam_policies" {}
