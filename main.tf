@@ -63,6 +63,3 @@ output "permission_helper" {
   value = local.permission_helper
 }
 
-variable "accountUUID" {}
-
-variable "iam_policies" {}
