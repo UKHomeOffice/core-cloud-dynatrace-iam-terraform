@@ -54,20 +54,20 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 }
 
 locals {
-  groupEnvs = flatten(distinct([for item in local.permission_helper : { group_name = item.group_name, env_id = item.env_id }]))
+  groupEnvs = { for item in flatten(distinct([for item in local.permission_helper : { group_name = item.group_name, env_id = item.env_id }])) : "${item.group_name}.${item.env_id}" => item }
 }
 
 resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
-  count = length(local.groupEnvs)
+  for_each = local.groupEnvs
 
   // dynatrace_iam_policy_bindings_v2 requires a unique resource per group and environment combination
-  group       = dynatrace_iam_group.cc-iam-group[local.groupEnvs[count.index].group_name].id
-  environment = local.groupEnvs[count.index].env_id
+  group       = dynatrace_iam_group.cc-iam-group[each.value.group_name].id
+  environment = each.value.env_id
 
   dynamic "policy" {
     // What this for_each does is look up policy bindings for the specific group and environment
     for_each = [for k, item in local.permission_helper :
-    item if item["group_name"] == local.groupEnvs[count.index].group_name && item["env_id"] == local.groupEnvs[count.index].env_id]
+    item if item["group_name"] == each.value.group_name && item["env_id"] == each.value.env_id]
     content {
       id         = element([for item in local.iam_policies : item if item["name"] == policy.value.policy_name], 0).id
       parameters = policy.value.env_params != null ? policy.value.env_params.policy_parameters : null
