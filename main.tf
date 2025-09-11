@@ -1,4 +1,4 @@
-data "dynatrace_iam_policies" "allPolicies" {
+ data "dynatrace_iam_policies" "allPolicies" {
   environments = ["*"]
   accounts     = ["*"]
   global       = true
@@ -53,18 +53,27 @@ resource "dynatrace_iam_policy_boundary" "boundaries" {
 
 }
 
+locals {
+  groupEnvs = { for item in flatten(distinct([for item in local.permission_helper : { group_name = item.group_name, env_id = item.env_id }])) : "${item.group_name}.${item.env_id}" => item }
+}
+
 resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
-  for_each = local.permission_helper
+  for_each = local.groupEnvs
 
-  group = element([for item in dynatrace_iam_group.cc-iam-group : item if item["name"] == each.value.group_name], 0).id
-
+  // dynatrace_iam_policy_bindings_v2 requires a unique resource per group and environment combination
+  group       = dynatrace_iam_group.cc-iam-group[each.value.group_name].id
   environment = each.value.env_id
 
-  policy {
-    id         = element([for item in local.iam_policies : item if item["name"] == each.value.policy_name], 0).id
-    parameters = each.value.env_params != null ? each.value.env_params.policy_parameters : null
-    metadata   = each.value.env_params != null ? each.value.env_params.policy_metadata : null
-    boundaries = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == each.key]
+  dynamic "policy" {
+    // What this for_each does is look up policy bindings for the specific group and environment
+    for_each = [for k, item in local.permission_helper :
+    item if item["group_name"] == each.value.group_name && item["env_id"] == each.value.env_id]
+    content {
+      id         = element([for item in local.iam_policies : item if item["name"] == policy.value.policy_name], 0).id
+      parameters = policy.value.env_params != null ? policy.value.env_params.policy_parameters : null
+      metadata   = policy.value.env_params != null ? policy.value.env_params.policy_metadata : null
+      boundaries = [for item in dynatrace_iam_policy_boundary.boundaries : item.id if item.name == "${policy.value.group_name}.${policy.value.policy_name}.${policy.value.env_id}"] // This looks up whether a boundary exists for the group/policy/env combination
+    }
   }
 }
 
