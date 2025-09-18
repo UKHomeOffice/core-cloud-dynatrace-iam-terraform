@@ -37,5 +37,6 @@ variable "iam_policies" {
     policy_description = string
   }))
   description = "Map of policy names and their policy query statement."
+  default     = {}
 }
 
