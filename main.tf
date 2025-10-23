@@ -76,7 +76,3 @@ resource "dynatrace_iam_policy_bindings_v2" "cc-policy-bindings" {
     }
   }
 }
-
-output "permission_helper" {
-  value = local.permission_helper
-}

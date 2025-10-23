@@ -56,10 +56,6 @@ module "example" {
   accountUUID = "a8c6fb99-cc30-46b5-9306-1111111"
 }
 
-output "permission_helper" {
-  value = module.example.permission_helper
-}
-
 terraform {
   required_providers {
     dynatrace = {
